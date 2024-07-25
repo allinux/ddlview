@@ -60,7 +60,7 @@ fn main() -> Result<(), anyhow::Error> {
         Commands::Schema(args) => command::schema::execute(args, cloud_option)?,
         Commands::Head(args) => match command::head::execute(args, cloud_option) {
             Ok(_) => println!("Done."),
-            Err(e) => println!("{}: Please check the path. Is exist a path?", e),
+            Err(e) => println!("{}", e),
         },
         Commands::Sql(args) => command::sql::execute(args, cloud_option)?,
     };
