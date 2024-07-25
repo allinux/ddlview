@@ -1,0 +1,16 @@
+[package]
+name = "s3util"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aws-config = { workspace = true }
+aws-sdk-s3 = { workspace = true }
+once_cell = { workspace = true }
+rayon = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+tracing = { workspace = true }
+bytes = { workspace = true }

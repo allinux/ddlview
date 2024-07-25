@@ -1,0 +1,20 @@
+[package]
+name = "ddlviewer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aws-config = { workspace = true }
+aws-sdk-s3 = { workspace = true }
+polars = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+dyn-fmt = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+s3util = { workspace = true }
+
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-gcc"
