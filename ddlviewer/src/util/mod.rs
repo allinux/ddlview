@@ -1,6 +1,5 @@
-use aws_sdk_s3::config::{Credentials, ProvideCredentials};
+use aws_sdk_s3::config::Credentials;
 use polars::io::cloud::{AmazonS3ConfigKey, CloudOptions};
-use s3util::aws::AwsConnectionParams;
 
 pub fn get_cloud_option<P: AsRef<str>>(cred: Credentials, region: P) -> Option<CloudOptions> {
 

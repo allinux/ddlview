@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use ddlviewer::{command, run, util::get_cloud_option};
+use ddlviewer::{command, util::get_cloud_option};
 use s3util::aws::{get_credential, s3::client::AwsS3, AwsConnectionParams};
 
 #[derive(Debug, Parser)]

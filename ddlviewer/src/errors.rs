@@ -1,4 +1,3 @@
-use polars::error::PolarsError;
 use std::path::PathBuf;
 
 use thiserror::Error;

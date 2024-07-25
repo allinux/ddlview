@@ -8,7 +8,7 @@ use aws_config::{
     BehaviorVersion, Region, SdkConfig,
 };
 use aws_sdk_s3::{
-    config::{Credentials, ProvideCredentials, SharedCredentialsProvider},
+    config::{Credentials, SharedCredentialsProvider},
     Client,
 };
 
@@ -25,21 +25,21 @@ pub enum AwsClients {
 }
 
 pub fn get_credential<S: AsRef<str>>(aws_s3: &AwsS3<S>) -> Result<aws_sdk_s3::config::Credentials, anyhow::Error> {
-    let credential = BUILDER.block_on(async {
+    
+    BUILDER.block_on(async {
         let cred = aws_s3.get_credential().await?;
         Ok(cred)
-    });
-    credential
+    })
 }
 
 //impl AwsClients {
 pub fn get_s3_client<S: AsRef<str>>(aws_s3: AwsS3<S>) -> Client {
-    let client = BUILDER.block_on(async {
+    
+    BUILDER.block_on(async {
         let aws_client = aws_s3.get_client().await;
         let AwsClients::S3Client(client) = aws_client;
         client
-    });
-    client
+    })
 }
 //}
 

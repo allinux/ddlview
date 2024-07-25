@@ -1,8 +1,6 @@
-use crate::{errors::DDLError, util::get_cloud_option};
-use clap::{Parser, Subcommand};
+use clap::Parser;
 
 use polars::{io::cloud::CloudOptions, lazy::frame::LazyFrame, prelude::ScanArgsParquet};
-use s3util::aws::{get_credential, s3::client::AwsS3, AwsConnectionParams};
 
 #[derive(Debug, Parser)]
 pub struct SchemaArgs {

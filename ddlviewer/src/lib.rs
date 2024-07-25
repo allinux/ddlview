@@ -1,9 +1,7 @@
-use std::borrow::Borrow;
-
 use polars::prelude::{LazyFrame, ScanArgsParquet};
 use s3util::aws::{
-    get_credential, get_s3_client,
-    s3::{client::AwsS3, util::ListObjects},
+    get_credential,
+    s3::client::AwsS3,
     AwsConnectionParams,
 };
 use util::get_cloud_option;
