@@ -38,13 +38,13 @@ fn main() -> Result<(), anyhow::Error> {
 
     let s3 = AwsS3 {
         conn_params: AwsConnectionParams {
-            profile_name: args.profile,
-            region: args.region,
-            access_key_id: args.aws_access_key_id,
-            secret_access_key: args.aws_secret_access_key,
+            profile_name: args.profile.clone(),
+            region: args.region.clone(),
+            access_key_id: args.aws_access_key_id.clone(),
+            secret_access_key: args.aws_secret_access_key.clone(),
         },
     };
-    s3
+
     let cloud_option = match args {
         Args {
             profile: None,
@@ -53,10 +53,19 @@ fn main() -> Result<(), anyhow::Error> {
             ..
         } => None,
         _ => {
+            let s3 = AwsS3 {
+                conn_params: AwsConnectionParams {
+                    profile_name: args.profile,
+                    region: args.region,
+                    access_key_id: args.aws_access_key_id,
+                    secret_access_key: args.aws_secret_access_key,
+                },
+            };
             let cred = get_credential(&s3)?;
             get_cloud_option(cred, "ap-northeast-2")
         }
     };
+
     match args.command {
         Commands::Schema(args) => command::schema::execute(args, cloud_option, &s3)?,
         Commands::Head(args) => match command::head::execute(args, cloud_option, &s3) {
