@@ -1,52 +1,83 @@
-use polars::prelude::{LazyFrame, ScanArgsParquet};
-use s3util::aws::{
-    get_credential,
-    s3::client::AwsS3,
-    AwsConnectionParams,
-};
+use s3util::aws::{get_credential, s3::client::AwsS3, AwsConnectionParams};
 use util::get_cloud_option;
 
 pub mod command;
 pub mod errors;
 pub mod util;
 
+use clap::{Parser, Subcommand};
+
+#[derive(Debug, Parser)]
+#[command(version, about)]
+struct Args {
+    /// profile name
+    #[arg(short, long)]
+    profile: Option<String>,
+
+    /// aws_access_key_id
+    #[arg(short = 'i', long = "id")]
+    aws_access_key_id: Option<String>,
+
+    /// aws_secret_access_key
+    #[arg(short = 'k', long = "secret")]
+    aws_secret_access_key: Option<String>,
+
+    #[arg(short = 'r', long = "region", default_value = "ap-northeast-2")]
+    region: Option<String>,
+
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Debug, Subcommand)]
+enum Commands {
+    Schema(command::schema::SchemaArgs),
+    Head(command::head::SchemaArgs),
+    Sql(command::sql::SchemaArgs),
+}
+
 pub fn run() -> Result<(), anyhow::Error> {
-    // let s3 = AwsS3 {
-    //     conn_params: AwsConnectionParams {
-    //         profile_name: Some("ddl"),
-    //         ..Default::default()
-    //     },
-    // };
-    // let client = get_s3_client(s3);
+    //env_logger::init();
+    let args = Args::parse();
+    //log::info!("{:?}", args);
 
-    // let files = client.list_all_objects(
-    //     "s3-an2-op-datalake-datatransfer-ha",
-    //     "yhjung/atom_landing/20240601/",
-    //     Some(".pgp"),
-    // )?;
-
-    // files.iter().for_each(|f| println!("{}", f));
-    let conn_params = AwsConnectionParams {
-        profile_name: Some("ddl".to_owned()),
-        region: Some("ap-northeast-2".to_owned()),
-        ..Default::default()
+    let s3 = AwsS3 {
+        conn_params: AwsConnectionParams {
+            profile_name: args.profile.clone(),
+            region: args.region.clone(),
+            access_key_id: args.aws_access_key_id.clone(),
+            secret_access_key: args.aws_secret_access_key.clone(),
+        },
     };
-    let s3 = AwsS3 { conn_params };
 
-    let cred = get_credential(&s3)?;
-
-    let region = &s3.conn_params.region.unwrap_or("ap-northeast-2".to_owned());
-
-    let cloud_option = get_cloud_option(cred, region);
-    let args = ScanArgsParquet {
-        hive_options: Default::default(),
-        cloud_options: cloud_option,
-        ..Default::default()
+    let cloud_option = match args {
+        Args {
+            profile: None,
+            aws_access_key_id: None,
+            aws_secret_access_key: None,
+            ..
+        } => None,
+        _ => {
+            let s3 = AwsS3 {
+                conn_params: AwsConnectionParams {
+                    profile_name: args.profile,
+                    region: args.region,
+                    access_key_id: args.aws_access_key_id,
+                    secret_access_key: args.aws_secret_access_key,
+                },
+            };
+            let cred = get_credential(&s3)?;
+            get_cloud_option(cred, "ap-northeast-2")
+        }
     };
-    let df = LazyFrame::scan_parquet(
-        "s3://s3-an2-op-datalake-datatransfer-ha/yhjung/402_AIRSOLUTION_AIRPURIFIER_10_1/*/*.parquet",
-        args,
-    )?;
-    println!("{}", df.limit(10).collect()?);
+
+    match args.command {
+        Commands::Schema(args) => command::schema::execute(args, cloud_option, &s3)?,
+        Commands::Head(args) => match command::head::execute(args, cloud_option, &s3) {
+            Ok(_) => println!("Done."),
+            Err(e) => println!("{}", e),
+        },
+        Commands::Sql(args) => command::sql::execute(args, cloud_option, &s3)?,
+    };
     Ok(())
 }
