@@ -36,6 +36,15 @@ fn main() -> Result<(), anyhow::Error> {
     let args = Args::parse();
     log::info!("{:?}", args);
 
+    let s3 = AwsS3 {
+        conn_params: AwsConnectionParams {
+            profile_name: args.profile,
+            region: args.region,
+            access_key_id: args.aws_access_key_id,
+            secret_access_key: args.aws_secret_access_key,
+        },
+    };
+    s3
     let cloud_option = match args {
         Args {
             profile: None,
@@ -44,25 +53,17 @@ fn main() -> Result<(), anyhow::Error> {
             ..
         } => None,
         _ => {
-            let s3 = AwsS3 {
-                conn_params: AwsConnectionParams {
-                    profile_name: args.profile,
-                    region: args.region,
-                    access_key_id: args.aws_access_key_id,
-                    secret_access_key: args.aws_secret_access_key,
-                },
-            };
             let cred = get_credential(&s3)?;
             get_cloud_option(cred, "ap-northeast-2")
         }
     };
     match args.command {
-        Commands::Schema(args) => command::schema::execute(args, cloud_option)?,
-        Commands::Head(args) => match command::head::execute(args, cloud_option) {
+        Commands::Schema(args) => command::schema::execute(args, cloud_option, &s3)?,
+        Commands::Head(args) => match command::head::execute(args, cloud_option, &s3) {
             Ok(_) => println!("Done."),
             Err(e) => println!("{}", e),
         },
-        Commands::Sql(args) => command::sql::execute(args, cloud_option)?,
+        Commands::Sql(args) => command::sql::execute(args, cloud_option, &s3)?,
     };
     Ok(())
 }

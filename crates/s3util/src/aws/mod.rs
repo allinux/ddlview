@@ -25,7 +25,6 @@ pub enum AwsClients {
 }
 
 pub fn get_credential<S: AsRef<str>>(aws_s3: &AwsS3<S>) -> Result<aws_sdk_s3::config::Credentials, anyhow::Error> {
-    
     BUILDER.block_on(async {
         let cred = aws_s3.get_credential().await?;
         Ok(cred)
@@ -34,7 +33,6 @@ pub fn get_credential<S: AsRef<str>>(aws_s3: &AwsS3<S>) -> Result<aws_sdk_s3::co
 
 //impl AwsClients {
 pub fn get_s3_client<S: AsRef<str>>(aws_s3: AwsS3<S>) -> Client {
-    
     BUILDER.block_on(async {
         let aws_client = aws_s3.get_client().await;
         let AwsClients::S3Client(client) = aws_client;
@@ -55,7 +53,7 @@ trait AwsConfig {
     async fn get_config<S: AsRef<str>>(&self, aws_connection_params: &AwsConnectionParams<S>) -> SdkConfig;
 }
 
-trait AwsClient {
+pub trait AwsClient {
     async fn get_client(&self) -> AwsClients;
     async fn get_credential(&self) -> Result<Credentials, anyhow::Error>;
 }

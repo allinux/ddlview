@@ -1,14 +1,21 @@
-use std::ffi::OsStr;
+use std::{ffi::OsStr, ops::Deref};
 
 use clap::Parser;
 
+use dyn_fmt::AsStrFormatExt;
 use polars::{
+    frame::DataFrame,
     io::{cloud::CloudOptions, csv::write::CsvWriter, SerWriter},
     lazy::frame::LazyFrame,
     prelude::{ParquetWriter, ScanArgsParquet},
     sql::SQLContext,
 };
-use dyn_fmt::AsStrFormatExt;
+use s3util::aws::AwsClient;
+use s3util::aws::{
+    s3::{client::AwsS3, util::ListObjects},
+    util::client::BUILDER,
+    AwsClients,
+};
 
 #[derive(Debug, Parser)]
 pub struct SchemaArgs {
@@ -28,7 +35,7 @@ pub struct SchemaArgs {
     low_memory: Option<bool>,
 }
 
-pub fn execute(args: SchemaArgs, cloud_option: Option<CloudOptions>) -> Result<(), anyhow::Error> {
+pub fn execute<S: AsRef<str>>(args: SchemaArgs, cloud_option: Option<CloudOptions>, aws_s3: &AwsS3<S>) -> Result<(), anyhow::Error> {
     let params = ScanArgsParquet {
         hive_options: Default::default(),
         cloud_options: cloud_option,
@@ -36,9 +43,27 @@ pub fn execute(args: SchemaArgs, cloud_option: Option<CloudOptions>) -> Result<(
         ..Default::default()
     };
 
+    let path_format_pair = args.path.iter().zip(args.format.unwrap()).collect::<Vec<(_, _)>>();
+
     let mut context = SQLContext::new();
-    let _ = args.path.iter().enumerate().try_for_each(|(index, p)| -> Result<(), anyhow::Error> {
-        context.register(&"df{}".format(&[index + 1]), LazyFrame::scan_parquet(p, params.clone())?);
+    let _ = path_format_pair.iter().enumerate().try_for_each(|(index, p)| -> Result<(), anyhow::Error> {
+        match (p.0.as_str(), p.1.as_ref()) {
+            (src_path, "parquet") => {
+                context.register(&"df{}".format(&[index + 1]), LazyFrame::scan_parquet(src_path, params.clone())?);
+            }
+            (src_path, "csv") => {
+                // let client = BUILDER.block_on(async {
+                //     let aws_client = aws_s3.get_client().await;
+
+                //     let AwsClients::S3Client(client) = aws_client;
+                //     client
+                // });
+                panic!("csv format has not yet been implemented.")
+                //context.register(&"df{}".format(&[index + 1]), DataFrame:: (src_path, params.clone())?);
+            }
+            (_, _) => panic!(),
+        }
+        //context.register(&"df{}".format(&[index + 1]), LazyFrame::scan_parquet(p.0, params.clone())?);
         Ok(())
     });
 
@@ -46,14 +71,14 @@ pub fn execute(args: SchemaArgs, cloud_option: Option<CloudOptions>) -> Result<(
 
     if let Some(save_path) = args.save_path {
         let mut file = std::fs::File::create(&save_path).unwrap();
-        
+
         match std::path::Path::new(&save_path).extension().and_then(OsStr::to_str) {
             Some("parquet") => {
                 let _ = ParquetWriter::new(&mut file).finish(&mut df_sql).unwrap();
-            },
-            Some("csv") => { 
+            }
+            Some("csv") => {
                 CsvWriter::new(&mut file).finish(&mut df_sql).unwrap();
-            },
+            }
             _ => panic!("Currently only .parquet or .csv is supported."),
         };
     } else {

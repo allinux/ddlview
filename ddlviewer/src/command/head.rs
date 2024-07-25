@@ -2,7 +2,12 @@ use std::ffi::OsStr;
 
 use clap::Parser;
 
-use polars::{io::{cloud::CloudOptions, csv::write::CsvWriter, parquet::write::ParquetWriter, SerWriter}, lazy::{dsl::col, frame::LazyFrame}, prelude::ScanArgsParquet};
+use polars::{
+    io::{cloud::CloudOptions, csv::write::CsvWriter, parquet::write::ParquetWriter, SerWriter},
+    lazy::{dsl::col, frame::LazyFrame},
+    prelude::ScanArgsParquet,
+};
+use s3util::aws::s3::client::AwsS3;
 
 #[derive(Debug, Parser)]
 pub struct SchemaArgs {
@@ -11,7 +16,7 @@ pub struct SchemaArgs {
 
     #[arg(long, value_delimiter(','), default_value = "parquet")]
     format: Option<Vec<String>>,
-    
+
     #[arg(long, default_value = "10")]
     count: usize,
 
@@ -28,7 +33,7 @@ pub struct SchemaArgs {
     str_len: Option<String>,
 }
 
-pub fn execute(args: SchemaArgs, cloud_option: Option<CloudOptions>) -> Result<(), anyhow::Error> {
+pub fn execute<S: AsRef<str>>(args: SchemaArgs, cloud_option: Option<CloudOptions>, aws_s3: &AwsS3<S>) -> Result<(), anyhow::Error> {
     std::env::set_var("POLARS_FMT_MAX_COLS ", args.max_cols.unwrap());
     std::env::set_var("POLARS_FMT_STR_LEN", args.str_len.unwrap());
 
@@ -44,19 +49,19 @@ pub fn execute(args: SchemaArgs, cloud_option: Option<CloudOptions>) -> Result<(
 
     if let Some(save_path) = args.save_path {
         let mut file = std::fs::File::create(&save_path).unwrap();
-        
+
         match std::path::Path::new(&save_path).extension().and_then(OsStr::to_str) {
             Some("parquet") => {
                 let _ = ParquetWriter::new(&mut file).finish(&mut df.collect()?).unwrap();
-            },
-            Some("csv") => { 
+            }
+            Some("csv") => {
                 CsvWriter::new(&mut file).finish(&mut df.collect()?).unwrap();
-            },
+            }
             _ => panic!("Currently only .parquet or .csv is supported."),
         };
     } else {
         println!("{:#?}", df.collect()?);
     }
-    
+
     Ok(())
 }
