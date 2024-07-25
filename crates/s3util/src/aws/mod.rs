@@ -13,7 +13,6 @@ use aws_sdk_s3::{
 };
 
 use s3::client::AwsS3;
-use util::client::BUILDER;
 
 pub mod s3;
 pub mod util;
@@ -25,19 +24,15 @@ pub enum AwsClients {
 }
 
 pub fn get_credential<S: AsRef<str>>(aws_s3: &AwsS3<S>) -> Result<aws_sdk_s3::config::Credentials, anyhow::Error> {
-    BUILDER.block_on(async {
-        let cred = aws_s3.get_credential().await?;
-        Ok(cred)
-    })
+    let cred = aws_s3.get_credential()?;
+    Ok(cred)
 }
 
 //impl AwsClients {
 pub fn get_s3_client<S: AsRef<str>>(aws_s3: AwsS3<S>) -> Client {
-    BUILDER.block_on(async {
-        let aws_client = aws_s3.get_client().await;
-        let AwsClients::S3Client(client) = aws_client;
-        client
-    })
+    let aws_client = aws_s3.get_client();
+    let AwsClients::S3Client(client) = aws_client;
+    client
 }
 //}
 
@@ -54,8 +49,8 @@ trait AwsConfig {
 }
 
 pub trait AwsClient {
-    async fn get_client(&self) -> AwsClients;
-    async fn get_credential(&self) -> Result<Credentials, anyhow::Error>;
+    fn get_client(&self) -> AwsClients;
+    fn get_credential(&self) -> Result<Credentials, anyhow::Error>;
 }
 
 impl<T: AwsClient> AwsConfig for T {

@@ -12,7 +12,7 @@ pub struct SchemaArgs {
 pub fn execute<S: AsRef<str>>(args: SchemaArgs, cloud_option: Option<CloudOptions>, aws_s3: &AwsS3<S>) -> Result<(), anyhow::Error> {
     let params = ScanArgsParquet {
         hive_options: Default::default(),
-        cloud_options: cloud_option,
+        cloud_options: if p.starts_with("s3://") { cloud_option } else { None },
         ..Default::default()
     };
 
