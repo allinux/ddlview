@@ -15,7 +15,7 @@ pub struct SchemaArgs {
     path: String,
 
     #[arg(long, value_delimiter(','), default_value = "parquet")]
-    format: Option<Vec<String>>,
+    format: Option<String>,
 
     #[arg(long, default_value = "10")]
     count: usize,

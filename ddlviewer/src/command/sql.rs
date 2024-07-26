@@ -53,6 +53,7 @@ pub fn execute<S: AsRef<str>>(args: SchemaArgs, cloud_option: Option<CloudOption
     //     Ok(())
     // });
     let _ = args.path.iter().enumerate().try_for_each(|(index, p)| -> Result<(), anyhow::Error> {
+        let p = p.trim();
         let params = ScanArgsParquet {
             hive_options: Default::default(),
             cloud_options: if p.starts_with("s3://") { cloud_option.clone() } else { None },
