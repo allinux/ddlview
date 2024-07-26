@@ -9,7 +9,6 @@ aws-config = "1.5.3"
 aws-sdk-s3 = { version = "1.41.0" }
 polars = { version = "0.41.3", features = [
     "lazy",
-    "async",
     "cloud",
     "aws",
     "parquet",
